@@ -78,13 +78,23 @@ WSGI_APPLICATION = 'ideas_backend.wsgi.application'
 # 5. CONFIGURACIÓN DE BASE DE DATOS (HÍBRIDA)
 # ----------------------------------------------------------------------
 # Esta configuración detecta automáticamente si estás en Render o en tu PC.
+import dj_database_url
+import os
+
+# Render buscará la DATABASE_URL de SQLite que pusimos arriba.
+# Si no la encuentra (en tu PC), usará tu MySQL local.
 DATABASES = {
     'default': dj_database_url.config(
-        # Si no hay DATABASE_URL (en tu PC), usa tu MySQL local:
         default='mysql://root:Jefri2311.@127.0.0.1:3306/ideas_social',
         conn_max_age=600
     )
 }
+
+# Solo aplica estas opciones si el motor es MySQL
+if 'mysql' in DATABASES['default']['ENGINE']:
+    DATABASES['default']['OPTIONS'] = {
+        'charset': 'utf8mb4',
+    }
 
 # Opciones de compatibilidad para MySQL
 DATABASES['default']['OPTIONS'] = {
