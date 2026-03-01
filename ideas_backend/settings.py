@@ -147,7 +147,7 @@ SIMPLE_JWT = {
 # ----------------------------------------------------------------------
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "https://tu-proyecto.netlify.app",  # <--- AGREGA TU URL DE NETLIFY AQUÍ
+    "https://ideasocial.netlify.app",  # <--- AGREGA TU URL DE NETLIFY AQUÍ
 ]
 
 # Si quieres permitir TODO mientras pruebas (menos seguro pero rápido):
