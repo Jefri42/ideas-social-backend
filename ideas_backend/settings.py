@@ -143,11 +143,15 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# 11. CONFIGURACIÓN CORS (React comunicándose con Django)
+# 11. CONFIGURACIÓN CORS
 # ----------------------------------------------------------------------
-CORS_ALLOW_ALL_ORIGINS = True  # Permitir todos para facilitar el despliegue inicial
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://tu-proyecto.netlify.app",  # <--- AGREGA TU URL DE NETLIFY AQUÍ
+]
 
+# Si quieres permitir TODO mientras pruebas (menos seguro pero rápido):
+CORS_ALLOW_ALL_ORIGINS = True
 # 12. OTROS
 # ----------------------------------------------------------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
