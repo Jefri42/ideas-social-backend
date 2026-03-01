@@ -12,8 +12,8 @@ Este archivo controla TODA la configuración del proyecto:
 
 from pathlib import Path
 from datetime import timedelta
-import pymysql
-pymysql.install_as_MySQLdb()
+#import pymysql
+#pymysql.install_as_MySQLdb()
 
 # Directorio raíz del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
