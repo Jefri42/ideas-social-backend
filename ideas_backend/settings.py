@@ -14,10 +14,24 @@ from pathlib import Path
 from datetime import timedelta
 #import pymysql
 #pymysql.install_as_MySQLdb()
+import os
+from pathlib import Path
+import os
+from pathlib import Path
 
-# Directorio raíz del proyecto
+# Esta línea es la que define qué es BASE_DIR
 BASE_DIR = Path(__file__).resolve().parent.parent
+# ... (otras configuraciones)
 
+# --- CONFIGURACIÓN PARA RENDER Y ARCHIVOS ESTÁTICOS ---
+
+STATIC_URL = 'static/'
+
+# Esta es la carpeta que Render creará automáticamente para tus archivos
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Esto permite que Django sirva los archivos de forma eficiente en la nube
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # ⚠️ SEGURIDAD: En producción, cambiar esta clave y ponerla en variables de entorno
 #SECRET_KEY = 'django-insecure-ideas-social-change-this-in-production'
 #SECRET_KEY = '^!17s)9nxpg9^@7*2@9vl)++t%!bs)-2s4vaewwha!%ueqt22*'
