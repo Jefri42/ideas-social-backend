@@ -1,11 +1,12 @@
-import dj_database_url
-import os
+import dj_database_url # Asegúrate de tener este import arriba
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3', # Fallback for local dev
+        # Esto se usará en tu PC (Localhost)
+        default='mysql://root:Jefri2311.@localhost:3306/ideas_social',
         conn_max_age=600
     )
 }
 
-ALLOWED_HOSTS = ['your-app-name.onrender.com', 'localhost', '127.0.0.1']
+# Esto es necesario para MySQL en Django
+DATABASES['default']['OPTIONS'] = {'charset': 'utf8mb4'}
