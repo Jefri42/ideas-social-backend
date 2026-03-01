@@ -22,8 +22,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 #SECRET_KEY = 'django-insecure-ideas-social-change-this-in-production'
 #SECRET_KEY = '^!17s)9nxpg9^@7*2@9vl)++t%!bs)-2s4vaewwha!%ueqt22*'
 import os
-SECRET_KEY = os.environ.get("c^vn=sm%h(%=*7qzvyirty=ijx&ond+cudzjitojnnl72w&g^h")
-
+# El primer texto es el nombre que buscará en Render, el segundo es tu llave real
+SECRET_KEY = os.environ.get("SECRET_KEY", "c^vn=sm%h(%=*7qzvyirty=ijx&ond+cudzjitojnnl72w&g^h")
 # ⚠️ En producción cambiar a False
 DEBUG = True
 
