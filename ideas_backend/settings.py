@@ -147,11 +147,11 @@ SIMPLE_JWT = {
 # ----------------------------------------------------------------------
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "https://ideasocial.netlify.app",  # <--- AGREGA TU URL DE NETLIFY AQUÍ
+    "https://mi-frontend-xi.vercel.app",
 ]
-
 # Si quieres permitir TODO mientras pruebas (menos seguro pero rápido):
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+
 # 12. OTROS
 # ----------------------------------------------------------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
