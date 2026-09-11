@@ -149,6 +149,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://mi-frontend-jade.vercel.app",
 ]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://mi-frontend.*\.vercel\.app$",
+]
 # Si quieres permitir TODO mientras pruebas (menos seguro pero rápido):
 CORS_ALLOW_ALL_ORIGINS = False
 
