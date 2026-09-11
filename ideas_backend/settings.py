@@ -147,7 +147,7 @@ SIMPLE_JWT = {
 # ----------------------------------------------------------------------
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "https://mi-frontend-xi.vercel.app",
+    "https://mi-frontend-jade.vercel.app",
 ]
 # Si quieres permitir TODO mientras pruebas (menos seguro pero rápido):
 CORS_ALLOW_ALL_ORIGINS = False
