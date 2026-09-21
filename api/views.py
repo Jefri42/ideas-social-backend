@@ -19,6 +19,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
@@ -123,15 +124,32 @@ class LogoutView(APIView):
     }
     """
     def post(self, request):
+        # Obtiene el refresh token del body
+        refresh_token = request.data.get('refresh')
+
+        if not refresh_token:
+            return Response(
+                {'error': 'Falta el refresh token.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
-            # Obtiene el refresh token del body
-            refresh_token = request.data.get('refresh')
             token = RefreshToken(refresh_token)
-            # Blacklist = invalida el token para que no pueda usarse más
-            token.blacklist()
+        except TokenError:
+            # El token ya venía inválido o caducado: la sesión ya está cerrada,
+            # así que para el cliente el logout fue exitoso igualmente.
             return Response({'message': 'Sesión cerrada correctamente.'})
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Blacklist = invalida el token para que no pueda usarse más.
+        # Solo existe si 'rest_framework_simplejwt.token_blacklist' está en
+        # INSTALLED_APPS; si no lo está, blacklist() no existe y no se puede
+        # revocar el token, pero el logout del cliente no debe fallar por eso.
+        try:
+            token.blacklist()
+        except AttributeError:
+            pass
+
+        return Response({'message': 'Sesión cerrada correctamente.'})
 
 
 # ============================================================
@@ -293,12 +311,16 @@ class CommentListCreateView(generics.ListCreateAPIView):
 # ============================================================
 
 @api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
 def feed(request):
     """
     GET /api/feed/
     
     Retorna las ideas de los usuarios que sigue el usuario autenticado.
     Si no sigue a nadie, retorna las ideas más recientes de todos.
+
+    Requiere sesión iniciada: usa request.user para saber a quién sigue,
+    y con un usuario anónimo la consulta falla (error 500 en vez de 401).
     """
     # Obtiene los IDs de los usuarios que sigue el usuario actual
     following_ids = Follow.objects.filter(
@@ -397,6 +419,11 @@ class MyProfileView(APIView):
     GET  /api/profile/   → Obtiene el perfil del usuario autenticado
     PUT  /api/profile/   → Actualiza bio, avatar, website, etc.
     """
+    # Ambas rutas usan request.user, así que exigen sesión iniciada.
+    # Sin esto heredaría IsAuthenticatedOrReadOnly, que deja pasar el GET
+    # anónimo y revienta con AnonymousUser (error 500 en vez de 401).
+    permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request):
         serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data)
