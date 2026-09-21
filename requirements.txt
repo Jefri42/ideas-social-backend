@@ -11,4 +11,8 @@ pillow==12.1.1
 djangorestframework
 djangorestframework-simplejwt
 django-cors-headers
-mysqlclient
+# mysqlclient solo se instala en Windows (desarrollo local con MySQL).
+# En Linux no hay wheel: pip compila desde el sdist y necesita pkg-config y
+# las cabeceras de MySQL, que no existen en el contenedor de Render, así que
+# el build falla. Producción usa PostgreSQL vía DATABASE_URL (psycopg2-binary).
+mysqlclient; sys_platform == "win32"
