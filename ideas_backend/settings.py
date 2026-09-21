@@ -84,7 +84,15 @@ WSGI_APPLICATION = 'ideas_backend.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default='mysql://root:Jefri2311.@127.0.0.1:3306/ideas_social',
-        conn_max_age=600
+        conn_max_age=600,
+        # Supabase (y su pooler) cierran conexiones por su cuenta: cuando el
+        # proyecto se pausa, se reinicia o el pooler recicla un socket, la
+        # conexión persistente que guarda Django queda muerta. Sin este check
+        # Django la reutiliza y lanza "server closed the connection
+        # unexpectedly" durante hasta conn_max_age segundos, incluso con la
+        # base de datos ya recuperada. Con el check, valida la conexión al
+        # inicio de cada request y reconecta si hace falta.
+        conn_health_checks=True,
     )
 }
 
