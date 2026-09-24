@@ -1,0 +1,17 @@
+# Actividad artificial para el repositorio
+#
+# GitHub desactiva los workflows programados si el repositorio pasa 60
+# dias sin actividad. Si eso pasara, el keep-alive de Supabase dejaria
+# de ejecutarse en silencio y el proyecto se pausaria ~7 dias despues,
+# tumbando el backend entero.
+#
+# El workflow "Keep alive" reescribe la ultima linea de este archivo en
+# cada ejecucion y hace push. Cada push reinicia el contador de 60 dias.
+#
+# Esta rama esta separada de main A PROPOSITO: Render despliega desde
+# main, y un commit cada 3 dias alli dispararia un redespliegue —y un
+# "migrate" contra la base de datos de produccion— sin ninguna razon.
+#
+# No hay nada que mantener aqui. Esta rama no se mergea nunca.
+
+last-ping: 2026-09-24T19:40:00Z
