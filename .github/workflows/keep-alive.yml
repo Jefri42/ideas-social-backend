@@ -1,0 +1,53 @@
+# ============================================================
+# KEEP-ALIVE — evita que Supabase pause el proyecto
+# ============================================================
+# Los proyectos gratuitos de Supabase se pausan tras ~7 dias sin
+# actividad. Cuando eso pasa el backend entero se cae y el deploy de
+# Render falla en "migrate" con:
+#
+#   FATAL: (ENOTFOUND) tenant/user postgres.<ref> not found
+#
+# Este workflow pega cada 3 dias a un endpoint que hace una consulta
+# real a la base de datos, de modo que Supabase la cuenta como
+# actividad y no la pausa. De paso mantiene despierto el servicio de
+# Render, que tambien se duerme por inactividad.
+#
+# OJO: GitHub desactiva los workflows programados si el repo pasa 60
+# dias sin commits. Si eso ocurre hay que reactivarlo a mano desde la
+# pestana Actions.
+# ============================================================
+name: Keep alive
+
+on:
+  schedule:
+    # Cada 3 dias a las 12:00 UTC. Supabase pausa a los ~7 dias, asi
+    # que este margen aguanta incluso si falla una ejecucion.
+    - cron: '0 12 */3 * *'
+  # Permite lanzarlo a mano desde la pestana Actions
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consultar la API (toca la base de datos)
+        run: |
+          URL="https://ideas-social-backend.onrender.com/api/ideas/"
+
+          # Render duerme el servicio gratuito: el primer intento puede
+          # tardar bastante en despertarlo, por eso reintentamos.
+          for intento in 1 2 3 4 5; do
+            codigo=$(curl -s -o /dev/null -w '%{http_code}' --max-time 120 "$URL" || echo "000")
+            echo "Intento $intento -> HTTP $codigo"
+
+            if [ "$codigo" = "200" ]; then
+              echo "Backend y base de datos responden correctamente."
+              exit 0
+            fi
+
+            sleep 30
+          done
+
+          echo "::error::El backend no respondio 200 tras 5 intentos (ultimo: $codigo)."
+          echo "Revisa si el proyecto de Supabase esta pausado."
+          exit 1
