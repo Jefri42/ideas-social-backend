@@ -9,12 +9,18 @@
 #
 # Este workflow pega cada 3 dias a un endpoint que hace una consulta
 # real a la base de datos, de modo que Supabase la cuenta como
-# actividad y no la pausa. De paso mantiene despierto el servicio de
-# Render, que tambien se duerme por inactividad.
+# actividad y no la pausa.
 #
-# OJO: GitHub desactiva los workflows programados si el repo pasa 60
-# dias sin commits. Si eso ocurre hay que reactivarlo a mano desde la
-# pestana Actions.
+# (Esto NO mantiene caliente el servicio de Render: el plan gratuito
+# se duerme a los ~15 minutos de inactividad, asi que un ping cada 3
+# dias solo lo despierta un momento. Por eso el primer intento puede
+# tardar medio minuto.)
+#
+# El segundo trabajo resuelve el otro lado del problema: GitHub
+# desactiva los workflows programados si el repositorio pasa 60 dias
+# sin actividad, y entonces esto dejaria de ejecutarse en silencio.
+# Empujar un commit a la rama "keepalive" en cada ejecucion reinicia
+# ese contador.
 # ============================================================
 name: Keep alive
 
@@ -25,6 +31,15 @@ on:
     - cron: '0 12 */3 * *'
   # Permite lanzarlo a mano desde la pestana Actions
   workflow_dispatch:
+
+# Necesario para poder empujar a la rama "keepalive".
+permissions:
+  contents: write
+
+# Dos ejecuciones a la vez se pisarian al hacer push.
+concurrency:
+  group: keep-alive
+  cancel-in-progress: false
 
 jobs:
   ping:
@@ -51,3 +66,36 @@ jobs:
           echo "::error::El backend no respondio 200 tras 5 intentos (ultimo: $codigo)."
           echo "Revisa si el proyecto de Supabase esta pausado."
           exit 1
+
+      # Los dos pasos siguientes llevan "if: always()" a proposito: si el
+      # ping falla queremos que el workflow salga en rojo, pero AUN ASI
+      # hay que registrar actividad, o GitHub acabara desactivandolo.
+      - name: Descargar la rama keepalive
+        if: always()
+        uses: actions/checkout@v5
+        with:
+          ref: keepalive
+          fetch-depth: 1
+
+      - name: Registrar actividad en el repositorio
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          ahora=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+          if grep -q '^last-ping:' last-ping.txt; then
+            sed -i "s|^last-ping: .*|last-ping: $ahora|" last-ping.txt
+          else
+            printf '\nlast-ping: %s\n' "$ahora" >> last-ping.txt
+          fi
+
+          git add last-ping.txt
+          git commit -m "Keep alive: $ahora"
+
+          # Si otra ejecucion empujo primero, reintegramos y reintentamos.
+          git push origin keepalive || {
+            git pull --rebase origin keepalive
+            git push origin keepalive
+          }
