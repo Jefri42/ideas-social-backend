@@ -13,9 +13,9 @@ Estructura de URLs:
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
-from django.conf.urls.static import static
+from django.views.static import serve
 
 urlpatterns = [
     # Panel de administración — solo para el superusuario
@@ -26,7 +26,19 @@ urlpatterns = [
     path('api/', include('api.urls')),
 ]
 
-# En desarrollo, Django sirve los archivos de media (fotos de perfil, etc.)
-# En producción, esto lo maneja Nginx o un CDN
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Archivos subidos por los usuarios (avatares, imágenes de ideas).
+#
+# Antes esto colgaba de `if settings.DEBUG:`, y el helper `static()` devuelve
+# una lista vacía cuando DEBUG es False. Es decir: el /media/ de producción
+# solo funcionaba porque el servidor estaba corriendo en modo debug. Al
+# apagar DEBUG, cada avatar daba 404.
+#
+# WhiteNoise sirve STATIC_ROOT, pero no MEDIA_ROOT, así que la ruta se
+# declara explícitamente y ya no depende de DEBUG.
+urlpatterns += [
+    re_path(
+        r"^media/(?P<path>.*)$",
+        serve,
+        {"document_root": settings.MEDIA_ROOT},
+    ),
+]

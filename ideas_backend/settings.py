@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 # 1. RUTAS DEL PROYECTO
 # ----------------------------------------------------------------------
@@ -14,13 +15,32 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 2. CONFIGURACIÓN DE SEGURIDAD
 # ----------------------------------------------------------------------
-# En Render, esto se lee de las Environment Variables. Si no existe, usa la de backup.
-SECRET_KEY = os.environ.get("SECRET_KEY", "c^vn=sm%h(%=*7qzvyirty=ijx&ond+cudzjitojnnl72w&g^h")
+# DEBUG se lee del entorno y por defecto es False: si la variable falta en
+# Render, el comportamiento seguro es arrancar en modo producción, nunca
+# exponer el modo debug (trazas, código fuente y URLconf) en internet.
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-# DEBUG debe ser False en producción (Render). En tu PC será True.
-DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
+# La SECRET_KEY nunca se escribe en el repositorio. Firma las cookies de
+# sesión y, como SIMPLE_JWT no define SIGNING_KEY, firma también los JWT:
+# con la clave publicada cualquiera puede falsificar un token de cualquier
+# usuario, incluido el superusuario.
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        # Valor de relleno solo para desarrollo local.
+        SECRET_KEY = "django-insecure-solo-para-desarrollo-local"
+    else:
+        raise ImproperlyConfigured(
+            "Falta la variable de entorno SECRET_KEY. Configúrala en Render "
+            "(Environment) antes de desplegar."
+        )
 
 ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
+
+# Render corta el TLS en su proxy y reenvía la petición por HTTP con la
+# cabecera X-Forwarded-Proto. Sin esto Django cree que la conexión no es
+# segura y, con DEBUG=False, el login del admin falla la comprobación CSRF.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # 3. DEFINICIÓN DE APLICACIONES (INSTALLED_APPS)
 # ----------------------------------------------------------------------
@@ -83,7 +103,9 @@ WSGI_APPLICATION = 'ideas_backend.wsgi.application'
 # Render buscará DATABASE_URL (SQLite). Si no existe, usará tu MySQL local.
 DATABASES = {
     'default': dj_database_url.config(
-        default='mysql://root:Jefri2311.@127.0.0.1:3306/ideas_social',
+        # Sin DATABASE_URL se usa SQLite en el propio proyecto. Antes había
+        # aquí un DSN de MySQL con la contraseña en claro, en un repo público.
+        default=f"sqlite:///{(BASE_DIR / 'db.sqlite3').as_posix()}",
         conn_max_age=600,
         # Supabase (y su pooler) cierran conexiones por su cuenta: cuando el
         # proyecto se pausa, se reinicia o el pooler recicla un socket, la
@@ -122,8 +144,21 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Configuración de almacenamiento para WhiteNoise
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Django 5.1 eliminó STATICFILES_STORAGE: en Django 6 ese ajuste se ignora
+# en silencio, así que la compresión de WhiteNoise nunca se activaba. La
+# configuración equivalente vive ahora en el diccionario STORAGES.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        # Compressed*, no CompressedManifest*: la variante con manifiesto
+        # exige que `collectstatic` se haya ejecutado, y si el build de
+        # Render no lo hace, el admin responde 500 al no encontrar
+        # staticfiles.json. Esta comprime igual y no puede romper el arranque.
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
